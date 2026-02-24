@@ -1,82 +1,108 @@
-🛠️ JW_Key
-JW_Key est un outil Python simple permettant de :
+# JW_Key
 
-Décoder un JWT et extraire sa clé JWK intégrée.
+**JWT Key Extraction & RSA Reconstruction Tool**
 
-Reconstruire la clé RSA publique ou privée à partir du JWK.
+Outil offensif d'extraction et de reconstruction de clés cryptographiques embarquées dans des JSON Web Tokens. Conçu pour les pentesters et les joueurs de CTF.
 
-Afficher les informations de clé intégrées ou les IDs de clé (kid).
+---
 
-📖 Décodage du header JWT en Base64.
+## Cas d'usage en pentest
 
-🔍 Extraction de clé JWK embarquée dans le JWT.
+| Scénario | Ce que fait JW_Key |
+|---|---|
+| JWT avec JWK embarqué dans le header | Extrait la clé et reconstruit le PEM |
+| Clé publique RSA récupérable | Permet ensuite une attaque **HMAC confusion** (RS256 → HS256) |
+| Clé privée exposée par erreur | Extraction directe → signature de tokens arbitraires |
+| Champ `kid` présent | Détection pour investigation (path traversal, SQLi) |
 
-🛠️ Reconstruction et export en PEM de la clé publique ou privée.
+> Une clé publique extraite d'un JWT peut suffire à forger des tokens valides si le serveur accepte l'algorithme HS256 avec cette même clé.
 
-📑 Gestion des JWT avec champ kid uniquement.
+---
 
-🛑 Gestion des erreurs simple.
+## Installation
 
-📚 Prérequis
-Python 3
-
-Modules Python :
-
-bash
-Copy
-Edit
+```bash
+git clone https://github.com/T3Nat/JW_Key.git
+cd JW_Key
 pip install jwcrypto pyfiglet colorama
-🚀 Utilisation
-Lance le script
+```
 
-bash
-Copy
-Edit
+**Prérequis :** Python 3.8+
+
+---
+
+## Utilisation
+
+```bash
 python3 jw_key.py
-Colle ton JWT quand demandé
+```
 
-text
-Copy
-Edit
-[*] Enter JWT here : eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImp3ayI6...
-Le script :
+```
+[*] Enter JWT here : eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImp3ayI6ey...
 
-Affiche le JWT reçu
-
-Décode et extrait le JWK si présent
-
-Reconstruit et affiche la clé RSA en PEM (publique ou privée)
-
-📌 Exemple de résultat
-text
-Copy
-Edit
 [!] Here your JWT ->
-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImp3ayI6...
+ eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImp3ayI6ey...
 
 [*] Now the JWT with good parsing
 
 [!] Embedded Key -> {"kty":"RSA","n":"...","e":"AQAB"}
-
 [*] Now reconstructing the RSA key....
 [!] There is a public key !!! ->
------BEGIN PUBLIC KEY-----
-MIIBIjANBgkq...
------END PUBLIC KEY-----
-📖 Explication rapide
-decode_jwt() : décode l'entête JWT et récupère la clé JWK ou l'ID de clé.
+ -----BEGIN PUBLIC KEY-----
+ MIIBIjANBgkq...
+ -----END PUBLIC KEY-----
+```
 
-reconstruct_rsa() : reconstruit la clé RSA à partir du JWK (PEM).
+---
 
-📂 Arborescence
-Copy
-Edit
+## Workflow type en pentest
+
+```
+1. Intercepter un JWT (Burp, DevTools, proxy)
+2. JW_Key → extraire la clé publique PEM
+3. Utiliser la clé pour :
+   - Forger un token HS256 signé avec la clé publique (HMAC confusion)
+   - Identifier le type de clé et chercher des faiblesses (taille RSA faible, etc.)
+   - Injecter son propre JWK dans le header si le serveur le valide
+```
+
+---
+
+## Structure
+
+```
 JW_Key/
- ├── jw_key.py
- ├── README.md
-🛡️ Disclaimer
-⚠️ Ce script est à usage pédagogique et de test uniquement.
-Il ne doit pas être utilisé en production ni à des fins illégales.
+├── jw_key.py      # Script principal
+└── README.md
+```
 
-📬 Auteur
-[@T3Nat]
+---
+
+## Limitations actuelles
+
+- Supporte uniquement l'extraction JWK depuis le header JWT
+- Pas de forge de token intégrée (utiliser `pyjwt` ou `jwt_tool` en complément)
+- Pas de bruteforce de secret HMAC
+- Gestion d'erreurs basique
+
+---
+
+## Outils complémentaires
+
+| Outil | Usage |
+|---|---|
+| [jwt_tool](https://github.com/ticarpi/jwt_tool) | Suite complète d'attaques JWT |
+| [jwt.io](https://jwt.io) | Décodage rapide en ligne |
+| Burp Suite + JWT Editor | Manipulation de tokens en live |
+
+---
+
+## Disclaimer
+
+⚠️ **Usage autorisé uniquement dans un cadre légal** : pentests avec autorisation écrite, CTF, labs personnels. L'auteur décline toute responsabilité en cas d'utilisation malveillante.
+
+---
+
+## Auteur
+
+[@T3Nat](https://github.com/T3Nat)
